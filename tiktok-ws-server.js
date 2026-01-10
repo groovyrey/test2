@@ -6,8 +6,10 @@ const wss = new WebSocket.Server({ port: 8080 });
 console.log('WebSocket server started on port 8080');
 
 let tiktokLiveConnection;
+let currentInteractionType = 'chatOnly'; // Store the current interaction type
 
-function connectToTikTok(username) {
+function connectToTikTok(username, interactionType = 'chatOnly') {
+    currentInteractionType = interactionType; // Update the global interaction type
     // Disconnect from any existing connection
     if (tiktokLiveConnection) {
         tiktokLiveConnection.disconnect();
@@ -76,8 +78,9 @@ wss.on('connection', ws => {
             const data = JSON.parse(message);
             if (data.type === 'setUsername') {
                 const newUsername = data.username;
-                console.log(`Received request to connect to ${newUsername}`);
-                connectToTikTok(newUsername);
+                const interactionType = data.interactionType || 'chatOnly'; // Default to 'chatOnly'
+                console.log(`Received request to connect to ${newUsername} with interaction type: ${interactionType}`);
+                connectToTikTok(newUsername, interactionType);
             } else if (data.type === 'disconnect') {
                 console.log('Received request to disconnect');
                 if (tiktokLiveConnection) {

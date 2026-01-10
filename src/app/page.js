@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 // Removed Firebase Functions imports
-import { TextField, Button, Box, Container, Paper, CircularProgress, Typography, Avatar, List, ListItem, ListItemAvatar, ListItemText } from '@mui/material'; // Import MUI components
+import { TextField, Button, Box, Container, Paper, CircularProgress, Typography, Avatar, List, ListItem, ListItemAvatar, ListItemText, FormControl, InputLabel, Select, MenuItem } from '@mui/material'; // Import MUI components
 import ConnectWithoutContactIcon from '@mui/icons-material/ConnectWithoutContact';
 import LiveChat from './components/LiveChat/LiveChat';
 
@@ -12,6 +12,7 @@ const HomePage = () => {
   const [statusMessage, setStatusMessage] = useState('Disconnected');
   const [chatHistory, setChatHistory] = useState([]);
   const [game, setGame] = useState(null);
+  const [selectedInteractionType, setSelectedInteractionType] = useState('chatOnly'); // New state for interaction type
   const wsRef = useRef(null); // Ref for WebSocket instance
 
   const handleConnect = async () => {
@@ -33,8 +34,12 @@ const HomePage = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
       setStatusMessage('Connected to WebSocket server. Requesting TikTok Live connection...');
-      // Send username to WebSocket server
-      ws.send(JSON.stringify({ type: 'setUsername', username: tiktokUsername }));
+      // Send username and selected interaction type to WebSocket server
+      ws.send(JSON.stringify({
+        type: 'setUsername',
+        username: tiktokUsername,
+        interactionType: selectedInteractionType, // Send interaction type
+      }));
     };
 
     ws.onmessage = (event) => {
@@ -134,6 +139,20 @@ const HomePage = () => {
         <Box sx={{ mt: 2, textAlign: 'center', width: '100%' }}>
           <Typography variant="h6">Connected to TikTok Live!</Typography>
           <Typography variant="body1">Game and chat functionality removed.</Typography>
+          <FormControl fullWidth sx={{ maxWidth: 300, mt: 2, mb: 2 }}>
+            <InputLabel id="interaction-type-label">Interaction Type</InputLabel>
+            <Select
+              labelId="interaction-type-label"
+              id="interaction-type-select"
+              value={selectedInteractionType}
+              label="Interaction Type"
+              onChange={(e) => setSelectedInteractionType(e.target.value)}
+            >
+              <MenuItem value="chatOnly">Chat Only</MenuItem>
+              <MenuItem value="game">Game</MenuItem>
+              <MenuItem value="qa">Q&A</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant="outlined"
             color="error"
