@@ -11,10 +11,11 @@ body {
 
 body {
   color: var(--foreground);
-  background: linear-gradient(to bottom, #1a1a1a, #121212);
+  background-color: #121212; /* Consistent with MUI dark theme background */
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility; /* Improve font rendering */
   min-height: 100vh;
 }
 
