@@ -6,6 +6,7 @@ import ConnectWithoutContactIcon from '@mui/icons-material/ConnectWithoutContact
 import LiveChat from './components/LiveChat/LiveChat';
 import StatusIndicator from './components/StatusIndicator/StatusIndicator';
 import RoomInfo from './components/RoomInfo/RoomInfo';
+import GuessTheWord from './components/GuessTheWord/GuessTheWord';
 
 const HomePage = () => {
   const {
@@ -63,6 +64,7 @@ const HomePage = () => {
           >
             Disconnect
           </Button>
+          <GuessTheWord />
           <LiveChat chatHistory={chatHistory} />
         </Stack>
       );

@@ -6,17 +6,18 @@ const wss = new WebSocket.Server({ port: 8080 });
 console.log('WebSocket server started on port 8080');
 
 let tiktokLiveConnection;
-let currentInteractionType = 'chatOnly'; // Store the current interaction type
+let secretWord = '';
 
-function connectToTikTok(username, interactionType = 'chatOnly') {
-    currentInteractionType = interactionType; // Update the global interaction type
+function connectToTikTok(username) {
     // Disconnect from any existing connection
     if (tiktokLiveConnection) {
         tiktokLiveConnection.disconnect();
     }
 
     // Create a new connection object
-    tiktokLiveConnection = new WebcastPushConnection(username);
+    tiktokLiveConnection = new WebcastPushConnection(username, {
+        signApiToken: 'euler_MjhiZTZhMGM1NjExMDVlN2QxMjQwYmVlNjljOGE1MTBmOWY3NGQwY2ViM2Y4ODdlOWJhZjY3'
+    });
 
     // Connect to the stream
     tiktokLiveConnection.connect().then(state => {
@@ -56,14 +57,57 @@ function connectToTikTok(username, interactionType = 'chatOnly') {
             }
         });
 
-        // Game logic has been removed.
+        // Game logic
+        if (secretWord && data.comment.toLowerCase().includes(secretWord.toLowerCase())) {
+            const winnerData = {
+                uniqueId: data.uniqueId,
+                profilePictureUrl: data.profilePictureUrl
+            };
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: 'winner',
+                        winner: winnerData
+                    }));
+                }
+            });
+            secretWord = ''; // Reset the secret word
+        }
     });
 
-    // Optional: Listen for other events
-    tiktokLiveConnection.on('like', () => {
+    // Listen for likes
+    tiktokLiveConnection.on('like', (data) => {
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: 'like', message: 'Someone liked the stream!' }));
+                client.send(JSON.stringify({ type: 'like', totalLikeCount: data.totalLikeCount }));
+            }
+        });
+    });
+
+    // Listen for viewer count updates
+    tiktokLiveConnection.on('roomUser', (data) => {
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'viewerCount', viewerCount: data.viewerCount }));
+            }
+        });
+    });
+
+    tiktokLiveConnection.on('disconnected', (reason) => {
+        console.log('Disconnected from TikTok Live stream. Reason:', reason);
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'status', message: 'Disconnected from TikTok' }));
+            }
+        });
+    });
+
+    tiktokLiveConnection.on('error', err => {
+        console.error('Error from TikTok Live stream:', err);
+        console.error('Full error object:', JSON.stringify(err, null, 2));
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'status', message: 'Error from TikTok Live stream.' }));
             }
         });
     });
@@ -78,9 +122,8 @@ wss.on('connection', ws => {
             const data = JSON.parse(message);
             if (data.type === 'setUsername') {
                 const newUsername = data.username;
-                const interactionType = data.interactionType || 'chatOnly'; // Default to 'chatOnly'
-                console.log(`Received request to connect to ${newUsername} with interaction type: ${interactionType}`);
-                connectToTikTok(newUsername, interactionType);
+                console.log(`Received request to connect to ${newUsername}`);
+                connectToTikTok(newUsername);
             } else if (data.type === 'disconnect') {
                 console.log('Received request to disconnect');
                 if (tiktokLiveConnection) {
@@ -94,6 +137,9 @@ wss.on('connection', ws => {
                         }
                     });
                 }
+            } else if (data.type === 'setSecretWord') {
+                secretWord = data.word;
+                console.log(`Secret word set to: ${secretWord}`);
             }
         } catch (error) {
             console.error('Failed to parse message or invalid message format.');
@@ -105,5 +151,3 @@ wss.on('connection', ws => {
     });
 });
 
-// Initial connection
-connectToTikTok('vixennnd');
