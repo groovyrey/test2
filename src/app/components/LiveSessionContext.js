@@ -83,6 +83,9 @@ export const LiveSessionProvider = ({ children }) => {
             user_count: message.viewerCount,
           }));
           break;
+        case 'newWord':
+          // The GuessTheWord component handles the display of the new word
+          break;
         default:
           console.log('Unknown message type:', message.type);
       }
